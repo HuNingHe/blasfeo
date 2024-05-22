@@ -33,10 +33,10 @@
 #                                                                                                 #
 ###################################################################################################
 
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.12)
 
 # installation directory ( has to be before `project()` )
-set(CMAKE_INSTALL_PREFIX "/opt/blasfeo" CACHE STRING "Installation path")
+# set(CMAKE_INSTALL_PREFIX "/opt/blasfeo" CACHE STRING "Installation path")#
 
 project(blasfeo C ASM)
 
@@ -46,8 +46,8 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 
 # Select target architecture
-# set(TARGET X64_AUTOMATIC CACHE STRING "Target architecture")    # attempts at finding the best TARGET among selected architectures
-set(TARGET X64_INTEL_HASWELL CACHE STRING "Target architecture")    # x86_64 architecture with AVX2 and FMA, optimized for Intel Haswell, Skylake and AMD Zen, Zen2, Zen3
+set(TARGET X64_AUTOMATIC CACHE STRING "Target architecture")    # attempts at finding the best TARGET among selected architectures
+# set(TARGET X64_INTEL_HASWELL CACHE STRING "Target architecture")    # x86_64 architecture with AVX2 and FMA, optimized for Intel Haswell, Skylake and AMD Zen, Zen2, Zen3
 # set(TARGET X64_INTEL_SANDY_BRIDGE CACHE STRING "Target architecture")    # x86_64 architecture with AVX, optimized for Intel Sandy-Bridge
 # set(TARGET X64_INTEL_CORE CACHE STRING "Target architecture")    # x86_64 architecture with SSE3, optimized for Intel Core
 # set(TARGET X64_AMD_BULLDOZER CACHE STRING "Target architecture")    # x86_64 architecture with AVX and FMA, optimized for AMD Bulldozer
@@ -125,11 +125,11 @@ set(BLASFEO_TESTING OFF CACHE BOOL "Tests disabled")
 # set(BLASFEO_BENCHMARKS ON CACHE BOOL "Benchmarks enabled")
 set(BLASFEO_BENCHMARKS OFF CACHE BOOL "Benchmarks disabled")
 
-set(BLASFEO_EXAMPLES ON CACHE BOOL "Examples enabled")
+set(BLASFEO_EXAMPLES OFF CACHE BOOL "Examples enabled")
 # set(BLASFEO_EXAMPLES OFF CACHE BOOL "Examples disabled")
 
 # build shared library
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries")
+set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 
 # headers installation directory
 set(BLASFEO_HEADERS_INSTALLATION_DIRECTORY "include" CACHE STRING "Headers local installation directory")
@@ -454,7 +454,8 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${ASM_FLAGS_TARGET_${TARGET}}")
 endif()
 
-
+find_package(ament_cmake REQUIRED)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # source files
 
@@ -1203,17 +1204,29 @@ endif()
 target_include_directories(blasfeo
 	PUBLIC
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-		$<INSTALL_INTERFACE:${BLASFEO_HEADERS_INSTALLATION_DIRECTORY}>)
+		$<INSTALL_INTERFACE:include>)
 #		$<INSTALL_INTERFACE:include/blasfeo/include>)
 
+ament_export_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+install(DIRECTORY include/ DESTINATION include)
 
-install(TARGETS blasfeo EXPORT blasfeoConfig
-	LIBRARY DESTINATION lib
-	ARCHIVE DESTINATION lib
-	RUNTIME DESTINATION bin)
+# ament_export_libraries(blasfeo)
+# install(TARGETS blasfeo EXPORT blasfeoConfig
+# 	LIBRARY DESTINATION lib
+# 	ARCHIVE DESTINATION lib
+# 	RUNTIME DESTINATION bin)
+
+ament_export_targets(${PROJECT_NAME}_Targets HAS_LIBRARY_TARGET)
+install(
+  TARGETS ${PROJECT_NAME}
+  EXPORT ${PROJECT_NAME}_Targets
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include)
 
 
-install(EXPORT blasfeoConfig DESTINATION cmake)
+# install(EXPORT blasfeoConfig DESTINATION cmake)
 
 file(GLOB_RECURSE BLASFEO_HEADERS "include/*.h")
 install(FILES ${BLASFEO_HEADERS} DESTINATION ${BLASFEO_HEADERS_INSTALLATION_DIRECTORY})
@@ -1255,3 +1268,9 @@ endif()
 if(BLASFEO_EXAMPLES MATCHES ON)
 	add_subdirectory(examples)
 endif()
+
+
+
+# install(TARGETS blasfeo DESTINATION lib)
+
+ament_package()
